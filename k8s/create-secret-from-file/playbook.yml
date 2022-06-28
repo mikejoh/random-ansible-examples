@@ -1,0 +1,30 @@
+- name: Create objects in k8s using the Ansible k8s module
+  hosts: localhost
+
+  tasks:
+    - name: Read certificate file
+      delegate_to: localhost
+      ansible.builtin.slurp:
+        src: "./files/example.com.crt"
+      register: pemfile
+
+    - name: Read key file
+      delegate_to: localhost
+      ansible.builtin.slurp:
+        src: "./files/example.com.key"
+      register: keyfile
+
+    - name: Create a secret
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: ./ansible-lab.kubeconfig
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: certs
+            namespace: default
+          type: Opaque
+          data:
+            example.com.crt: "{{ pemfile['content'] }}"
+            example.com.key: "{{ keyfile['content'] }}"
